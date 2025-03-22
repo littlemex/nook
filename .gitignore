@@ -16,6 +16,7 @@ venv
 
 .DS_Store
 
+# カーソルの設定ファイル
 .cursorrules
 .cursorignore
 

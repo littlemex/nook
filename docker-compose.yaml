@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile.backend
     container_name: nook-backend
-    restart: always
+    #    restart: always
     ports:
       - "8000:8000"
     volumes:
@@ -19,7 +19,7 @@ services:
       context: .
       dockerfile: Dockerfile.frontend
     container_name: nook-frontend
-    restart: always
+    #restart: always
     ports:
       - "5173:5173"
     depends_on:
