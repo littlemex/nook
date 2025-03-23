@@ -4,12 +4,16 @@
 """
 
 import os
+import logging
 from typing import List, Dict, Any, Optional
 from fastapi import APIRouter, HTTPException, Depends
 from dotenv import load_dotenv
 
 from nook.api.models.schemas import ChatRequest, ChatResponse
-from nook.common.grok_client import Grok3Client
+from nook.common.llm_factory import get_llm_client
+
+# ロガーの設定
+logger = logging.getLogger(__name__)
 
 # 環境変数の読み込み
 load_dotenv()
@@ -39,17 +43,10 @@ async def chat(request: ChatRequest) -> ChatResponse:
     HTTPException
         APIキーが設定されていない場合や、APIリクエストに失敗した場合
     """
-    # APIキーの確認
-    api_key = os.environ.get("GROK_API_KEY")
-    if not api_key:
-        # デモモード: APIキーがない場合はダミーレスポンスを返す
-        return ChatResponse(
-            response="申し訳ありませんが、GROK_API_KEYが設定されていないため、実際の応答ができません。環境変数を設定してください。"
-        )
-    
     try:
-        # Grok3クライアントの初期化
-        client = Grok3Client(api_key=api_key)
+        # LLMクライアントの初期化
+        client = get_llm_client()
+        logger.info(f"Using LLM client: {type(client).__name__}")
         
         # チャット履歴の整形
         formatted_history = []
@@ -75,4 +72,4 @@ async def chat(request: ChatRequest) -> ChatResponse:
         return ChatResponse(response=response)
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"チャットリクエストの処理中にエラーが発生しました: {str(e)}") 
+        raise HTTPException(status_code=500, detail=f"チャットリクエストの処理中にエラーが発生しました: {str(e)}")

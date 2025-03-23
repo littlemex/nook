@@ -1,6 +1,7 @@
 """GitHubのトレンドリポジトリを収集するサービス。"""
 
 import tomli
+import logging
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -10,7 +11,10 @@ import requests
 from bs4 import BeautifulSoup
 
 from nook.common.storage import LocalStorage
-from nook.common.grok_client import Grok3Client
+from nook.common.llm_factory import get_llm_client
+
+# ロガーの設定
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -165,15 +169,16 @@ class GithubTrending:
             翻訳されたリポジトリリスト。
         """
         try:
-            # Grok APIクライアントの初期化
-            grok_client = Grok3Client()
+            # LLMクライアントの初期化
+            llm_client = get_llm_client()
+            logger.info(f"Using LLM client: {type(llm_client).__name__}")
             
             for language, repositories in repositories_by_language:
                 for repo in repositories:
                     if repo.description:
                         prompt = f"以下の英語のテキストを自然な日本語に翻訳してください。技術用語はそのままでも構いません。\n\n{repo.description}"
                         try:
-                            repo.description = grok_client.generate_content(prompt=prompt, temperature=0.3)
+                            repo.description = llm_client.generate_content(prompt=prompt, temperature=0.3)
                         except Exception as e:
                             print(f"Error translating description for {repo.name}: {str(e)}")
         
@@ -211,4 +216,4 @@ class GithubTrending:
                 content += "---\n\n"
         
         # 保存
-        self.storage.save_markdown(content, "github_trending", today) 
+        self.storage.save_markdown(content, "github_trending", today)

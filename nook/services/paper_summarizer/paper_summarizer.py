@@ -2,6 +2,7 @@
 
 import os
 import re
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -12,8 +13,11 @@ import requests
 from bs4 import BeautifulSoup
 from tqdm import tqdm
 
-from nook.common.grok_client import Grok3Client
+from nook.common.llm_factory import get_llm_client
 from nook.common.storage import LocalStorage
+
+# ロガーの設定
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -60,7 +64,8 @@ class PaperSummarizer:
             ストレージディレクトリのパス。
         """
         self.storage = LocalStorage(storage_dir)
-        self.grok_client = Grok3Client()
+        self.llm_client = get_llm_client()
+        logger.info(f"Using LLM client: {type(self.llm_client).__name__}")
     
     def run(self, limit: int = 5) -> None:
         """
@@ -236,7 +241,7 @@ class PaperSummarizer:
         try:
             prompt = f"以下の英語の学術論文のテキストを自然な日本語に翻訳してください。専門用語は適切に翻訳し、必要に応じて英語の専門用語を括弧内に残してください。\n\n{text}"
             
-            translated_text = self.grok_client.generate_content(
+            translated_text = self.llm_client.generate_content(
                 prompt=prompt,
                 temperature=0.3,
                 max_tokens=1000
@@ -295,7 +300,7 @@ class PaperSummarizer:
         """
         
         try:
-            summary = self.grok_client.generate_content(
+            summary = self.llm_client.generate_content(
                 prompt=prompt,
                 system_instruction=system_instruction,
                 temperature=0.3,
@@ -327,4 +332,4 @@ class PaperSummarizer:
             content += "---\n\n"
         
         # 保存
-        self.storage.save_markdown(content, "paper_summarizer", today) 
+        self.storage.save_markdown(content, "paper_summarizer", today)
